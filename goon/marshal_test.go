@@ -86,6 +86,19 @@ func TestMarshal(t *testing.T) {
 		Empty:   []string{},
 	}
 
+	test5 := make(map[string][]map[string]any)
+
+	temp2 := make(map[string]any)
+	temp2["name"] = "tamanho máximo"
+	temp2["age"] = 555
+
+	temp1 := make(map[string]any)
+
+	temp1["name"] = "tamanlego   áximo"
+	temp1["age"] = 12
+	temp1["size"] = 500
+
+	test5["users"] = []map[string]any{temp2, temp1}
 	t.Run("objects", func(t *testing.T) {
 		a, err := goon.Marshal(test1)
 		if err != nil {
@@ -120,6 +133,14 @@ func TestMarshal(t *testing.T) {
 
 	t.Run("array", func(t *testing.T) {
 		a, err := goon.Marshal(test4)
+		if err != nil {
+			t.Error(err)
+		}
+		fmt.Println(string(a))
+	})
+
+	t.Run("slice of slice", func(t *testing.T) {
+		a, err := goon.Marshal(test5)
 		if err != nil {
 			t.Error(err)
 		}
