@@ -51,8 +51,11 @@ func marshalSolve(rv reflect.Value, rt reflect.Type) (string, error) {
 	case reflect.Float64, reflect.Float32:
 		return fmt.Sprint(rv.Float()), nil
 	case reflect.Array, reflect.Slice:
+		var builder strings.Builder
+		builder.WriteString(fmt.Sprintf("[%d]", rv.Len()))
 		s, error := arrayMarshal(rv)
-		return s, error
+		builder.WriteString(s)
+		return builder.String(), error
 
 	default:
 		return "", fmt.Errorf("goon: invalid type for marshal: %s", rt.Kind())
@@ -313,7 +316,6 @@ func arrayMixMarshal(value reflect.Value) (string, error) {
 		}
 
 		if valKind == reflect.Struct || valKind == reflect.Map {
-			fmt.Println("summoning dothecsvthing")
 			str, err := doTheCSVThingORNothing(value)
 			if err == nil {
 				return str, nil

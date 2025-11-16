@@ -2,6 +2,7 @@ package goon_test
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/roboogg133/goon/goon"
@@ -99,11 +100,15 @@ func TestMarshal(t *testing.T) {
 	temp1["size"] = 500
 
 	test5["users"] = []map[string]any{temp2, temp1}
+
+	test6 := []string{"oi", "fsdafasdf", "ksç"}
+
 	t.Run("objects", func(t *testing.T) {
 		a, err := goon.Marshal(test1)
 		if err != nil {
 			t.Error(err)
 		}
+		os.WriteFile("object.toon", a, 0777)
 		fmt.Println(string(a))
 	})
 
@@ -120,6 +125,7 @@ func TestMarshal(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+		os.WriteFile("nested-object.toon", a, 0777)
 		fmt.Println(string(a))
 	})
 
@@ -139,8 +145,16 @@ func TestMarshal(t *testing.T) {
 		fmt.Println(string(a))
 	})
 
-	t.Run("slice of slice", func(t *testing.T) {
+	t.Run("slice of map/struct", func(t *testing.T) {
 		a, err := goon.Marshal(test5)
+		if err != nil {
+			t.Error(err)
+		}
+		fmt.Println(string(a))
+	})
+
+	t.Run("just an slice", func(t *testing.T) {
+		a, err := goon.Marshal(test6)
 		if err != nil {
 			t.Error(err)
 		}
