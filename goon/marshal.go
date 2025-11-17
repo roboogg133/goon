@@ -205,7 +205,7 @@ func arrayMarshal(value reflect.Value) (string, error) {
 	var builder strings.Builder
 
 	if value.Len() == 0 {
-		builder.WriteString(": ")
+		builder.WriteString(":\n")
 	}
 
 	for i := 0; i < value.Len(); i++ {
