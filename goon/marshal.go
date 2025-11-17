@@ -28,9 +28,9 @@ func marshalSolve(rv reflect.Value, rt reflect.Type) (string, error) {
 
 	switch kind {
 	case reflect.Struct, reflect.Map:
-
 		sttruc, err := marshalStruct(rv)
-		return string(sttruc), err
+		str, _ := strings.CutSuffix(string(sttruc), "\n")
+		return str, err
 	case reflect.String:
 		s := rv.String()
 		if strings.ContainsAny(s, "0123456789:,{}[]\"|\\-\t") {
@@ -55,7 +55,8 @@ func marshalSolve(rv reflect.Value, rt reflect.Type) (string, error) {
 		builder.WriteString(fmt.Sprintf("[%d]", rv.Len()))
 		s, error := arrayMarshal(rv)
 		builder.WriteString(s)
-		return builder.String(), error
+		str, _ := strings.CutSuffix(builder.String(), "\n")
+		return str, error
 
 	default:
 		return "", fmt.Errorf("goon: invalid type for marshal: %s", rt.Kind())
@@ -113,7 +114,7 @@ func normalize(v reflect.Value) ([]entry, error) {
 }
 
 // marshalStruct marshals a struct or map value into the goon textual representation.
-// 
+//
 // It accepts a reflect.Value that must represent a struct or map (as produced by normalize)
 // and returns the marshaled bytes or an error. Nil pointer fields are emitted as `null` unless
 // the field has an `omitempty` tag, in which case they are omitted. String values are quoted
@@ -208,8 +209,7 @@ func marshalStruct(v reflect.Value) ([]byte, error) {
 		final.WriteString(a)
 	}
 
-	str, _ := strings.CutSuffix(final.String(), "\n")
-	return []byte(str), nil
+	return []byte(final.String()), nil
 }
 
 // arrayMarshal formats an array or slice value into the goon sequence representation.
@@ -285,6 +285,7 @@ func arrayMarshal(value reflect.Value) (string, error) {
 			}
 			if value.Len()-1 == i {
 				builder.WriteString(fmt.Sprint(elem.Float()))
+				builder.WriteByte('\n')
 			} else {
 				builder.WriteString(fmt.Sprint(elem.Float()) + ",")
 			}
@@ -303,8 +304,7 @@ func arrayMarshal(value reflect.Value) (string, error) {
 			return "", fmt.Errorf("goon: unknown type kind %s", valKind)
 		}
 	}
-	str, _ := strings.CutSuffix(builder.String(), "\n")
-	return str, nil
+	return builder.String(), nil
 
 }
 
@@ -549,7 +549,6 @@ func doTheCSVThingORNothing(rv reflect.Value) (string, error) {
 		builder.WriteByte('\n')
 	}
 
-	str, _ := strings.CutSuffix(builder.String(), "\n")
-	return str, nil
+	return builder.String(), nil
 
 }
