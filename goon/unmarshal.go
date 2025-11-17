@@ -17,7 +17,6 @@ type posStruct struct {
 func Unmarshal(data []byte, v any) error {
 
 	rv := reflect.ValueOf(v)
-
 	kind := rv.Type().Kind()
 
 	if kind != reflect.Ptr || rv.IsNil() {
@@ -39,7 +38,6 @@ func Unmarshal(data []byte, v any) error {
 			}
 		}
 	}
-
 	reader := bytes.NewReader(data)
 	scanner := bufio.NewScanner(reader)
 
@@ -47,6 +45,14 @@ func Unmarshal(data []byte, v any) error {
 		text := scanner.Text()
 
 		strDoubleDot := strings.SplitN(text, ":", 2)
+		// if true is a list like users[n]: a, b, c, d
+	    if strings.ContainsAny(strings.TrimSpace(strDoubleDot[0]), "[]") && !strings.ContainsAny(strings.TrimSpace(strDoubleDot[0]), "{}") {
+
+
+			//if true is a csv-style
+		} else if strings.ContainsAny(strings.TrimSpace(strDoubleDot[0]), "[]") {
+
+		}
 
 		posVal, err := recognizeType(strings.TrimSpace(strDoubleDot[1]))
 		if err != nil {
