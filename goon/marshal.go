@@ -198,14 +198,15 @@ func marshalStruct(v reflect.Value) ([]byte, error) {
 		final.WriteString(a)
 	}
 
-	return []byte(final.String()), nil
+	str, _ := strings.CutSuffix(final.String(), "\n")
+	return []byte(str), nil
 }
 
 func arrayMarshal(value reflect.Value) (string, error) {
 	var builder strings.Builder
 
 	if value.Len() == 0 {
-		builder.WriteString(": ")
+		builder.WriteString(":\n")
 	}
 
 	for i := 0; i < value.Len(); i++ {
@@ -286,8 +287,8 @@ func arrayMarshal(value reflect.Value) (string, error) {
 			return "", fmt.Errorf("goon: unknown type kind %s", valKind)
 		}
 	}
-
-	return builder.String(), nil
+	str, _ := strings.CutSuffix(builder.String(), "\n")
+	return str, nil
 
 }
 
@@ -524,6 +525,7 @@ func doTheCSVThingORNothing(rv reflect.Value) (string, error) {
 		builder.WriteByte('\n')
 	}
 
-	return builder.String(), nil
+	str, _ := strings.CutSuffix(builder.String(), "\n")
+	return str, nil
 
 }
