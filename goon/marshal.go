@@ -285,6 +285,7 @@ func arrayMarshal(value reflect.Value) (string, error) {
 			}
 			if value.Len()-1 == i {
 				builder.WriteString(fmt.Sprint(elem.Float()))
+				builder.WriteByte('\n')
 			} else {
 				builder.WriteString(fmt.Sprint(elem.Float()) + ",")
 			}
