@@ -33,7 +33,7 @@ func marshalSolve(rv reflect.Value, rt reflect.Type) (string, error) {
 		return string(sttruc), err
 	case reflect.String:
 		s := rv.String()
-		if strings.ContainsAny(s, "0123456789:,{}[]|\\-	") {
+		if strings.ContainsAny(s, "0123456789:,{}[]\"|\\-\t") {
 			s = fmt.Sprintf("\"%s\"", s)
 		} else if s == "" {
 			s = "\"\""
@@ -143,7 +143,7 @@ func marshalStruct(v reflect.Value) ([]byte, error) {
 		switch valKind {
 		case reflect.String:
 			s := value.String()
-			if strings.ContainsAny(s, "0123456789:,{}[]|\\-	") {
+			if strings.ContainsAny(s, "0123456789:,{}[]\"|\\-\t") {
 				s = fmt.Sprintf("\"%s\"", s)
 			} else if s == "" {
 				s = "\"\""
@@ -234,7 +234,7 @@ func arrayMarshal(value reflect.Value) (string, error) {
 				builder.WriteString(": ")
 			}
 			s := elem.String()
-			if strings.ContainsAny(s, "0123456789:,{}[]|\\-	") {
+			if strings.ContainsAny(s, "0123456789:,{}[]\"|\\-\t") {
 				s = fmt.Sprintf("\"%s\"", s)
 			} else if s == "" {
 				s = "\"\""
@@ -324,7 +324,7 @@ func arrayMixMarshal(value reflect.Value) (string, error) {
 		switch valKind {
 		case reflect.String:
 			s := elem.String()
-			if strings.ContainsAny(s, "0123456789:,{}[]|\\-	") {
+			if strings.ContainsAny(s, "0123456789:,{}[]\"|\\-\t") {
 				s = fmt.Sprintf("\"%s\"", s)
 			} else if s == "" {
 				s = "\"\""
