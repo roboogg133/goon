@@ -112,6 +112,16 @@ func normalize(v reflect.Value) ([]entry, error) {
 	}
 }
 
+// marshalStruct marshals a struct or map value into the goon textual representation.
+// 
+// It accepts a reflect.Value that must represent a struct or map (as produced by normalize)
+// and returns the marshaled bytes or an error. Nil pointer fields are emitted as `null` unless
+// the field has an `omitempty` tag, in which case they are omitted. String values are quoted
+// when they contain special characters, are empty, equal `"true"`, `"false"`, or `"null"`,
+/// or begin/end with a space. Nested structs and maps are emitted as indented blocks (two-space
+// indentation per nesting level). Array and slice fields are formatted using the array marshal
+// conventions (including a `Name[length]` header). An error is returned for unsupported kinds
+// or when normalization fails.
 func marshalStruct(v reflect.Value) ([]byte, error) {
 	entries, err := normalize(v)
 	if err != nil {
@@ -202,6 +212,12 @@ func marshalStruct(v reflect.Value) ([]byte, error) {
 	return []byte(str), nil
 }
 
+// arrayMarshal formats an array or slice value into the goon sequence representation.
+// It emits a header for the first element (": ") and separates elements with commas; empty slices are represented as ":\n".
+// Pointer elements are dereferenced with nil pointers rendered as "null". For string elements, values containing digits or
+// punctuation, the empty string, the literals "true", "false", or "null", or values with leading/trailing spaces are quoted.
+// If any element is a complex kind (array, slice, interface, map, or struct) control is delegated to arrayMixMarshal.
+// Returns the formatted sequence as a string with any trailing newline removed, or an error for unsupported element kinds.
 func arrayMarshal(value reflect.Value) (string, error) {
 	var builder strings.Builder
 
@@ -457,6 +473,14 @@ func arrayMixMarshal(value reflect.Value) (string, error) {
 	return builder.String(), nil
 }
 
+// doTheCSVThingORNothing converts a slice value into a compact CSV-like block.
+// The output begins with a header of all encountered field names enclosed in
+// braces (e.g. "{a,b,c}:") followed by one indented row per slice element with
+// field values separated by commas; missing fields are rendered as `null`.
+// The function expects rv to be a slice whose elements are structs or maps
+// (interfaces wrapping those are accepted). It returns the assembled string
+// (without a trailing newline) or an error if an element is not a struct/map or
+// if normalization/marshalling of any field fails.
 func doTheCSVThingORNothing(rv reflect.Value) (string, error) {
 	var builder strings.Builder
 
