@@ -101,14 +101,11 @@ func TestMarshal(t *testing.T) {
 
 	test5["users"] = []map[string]any{temp2, temp1}
 
-	test6 := []string{"oi", "fsdafasdf", "ksç"}
-
 	t.Run("objects", func(t *testing.T) {
 		a, err := goon.Marshal(test1)
 		if err != nil {
 			t.Error(err)
 		}
-		os.WriteFile("object.toon", a, 0777)
 		fmt.Println(string(a))
 	})
 
@@ -129,6 +126,30 @@ func TestMarshal(t *testing.T) {
 		fmt.Println(string(a))
 	})
 
+	t.Run("nested-object map", func(t *testing.T) {
+
+		nestedMap := map[string]map[string]any{
+			"user": {
+				"id":   123,
+				"name": "Ada Lovelace",
+				"contact": map[string]string{
+					"email": "ada@example.com",
+					"phone": "+1-555-0100",
+				},
+				"settings": map[string]any{
+					"theme":         "dark",
+					"notifications": true,
+				},
+			},
+		}
+
+		a, err := goon.Marshal(nestedMap)
+		if err != nil {
+			t.Error(err)
+		}
+		fmt.Println(string(a))
+	})
+
 	t.Run("mixed array", func(t *testing.T) {
 		a, err := goon.Marshal(test3)
 		if err != nil {
@@ -145,6 +166,19 @@ func TestMarshal(t *testing.T) {
 		fmt.Println(string(a))
 	})
 
+	t.Run("arrayMap", func(t *testing.T) {
+		arrays := map[string][]any{
+			"tags":    {"admin", "ops", "dev"},
+			"numbers": {1, 2, 3, 4, 5},
+			"empty":   {},
+		}
+		a, err := goon.Marshal(arrays)
+		if err != nil {
+			t.Error(err)
+		}
+		fmt.Println(string(a))
+	})
+
 	t.Run("slice of map/struct", func(t *testing.T) {
 		a, err := goon.Marshal(test5)
 		if err != nil {
@@ -154,6 +188,7 @@ func TestMarshal(t *testing.T) {
 	})
 
 	t.Run("just an slice", func(t *testing.T) {
+		test6 := []string{"a", "aa", "bbb", "ccc", "dddd", "true", " padding "}
 		a, err := goon.Marshal(test6)
 		if err != nil {
 			t.Error(err)
