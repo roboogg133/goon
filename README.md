@@ -68,7 +68,6 @@ name : Ada Lovelace
 active : true
 email : ada@example.com
 score : 98.5
-
 ```
 
 ---
@@ -113,7 +112,6 @@ user :
   settings :
     theme : dark
     notifications : true
-
 ```
 
 ---
