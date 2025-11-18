@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 )
 
@@ -41,13 +42,15 @@ func Unmarshal(data []byte, v any) error {
 	reader := bytes.NewReader(data)
 	scanner := bufio.NewScanner(reader)
 
+	r, _ := regexp.Compile(`^.*?(?=\[\s*([1-9]\d*)\s*\])`)
+
 	for scanner.Scan() {
 		text := scanner.Text()
 
 		strDoubleDot := strings.SplitN(text, ":", 2)
 
 		// if is true is a mixed list
-		if strings.ContainsAny(strings.TrimSpace(strDoubleDot[0]), "[]") && !strings.ContainsAny(strings.TrimSpace(strDoubleDot[0]), "{}") && strings.TrimSpace(strDoubleDot[1]) == "" {
+		if r.MatchString(strings.TrimSpace(strDoubleDot[0])) && strings.TrimSpace(strDoubleDot[1]) == "" {
 
 			//if true is a csv-style
 		} else if strings.ContainsAny(strings.TrimSpace(strDoubleDot[0]), "[]") && strings.ContainsAny(strings.TrimSpace(strDoubleDot[0]), "{}") {
@@ -59,9 +62,12 @@ func Unmarshal(data []byte, v any) error {
 			return err
 		}
 
+		if !posVal.IsValid() {
+			continue
+		}
+
 		switch kind {
 		case reflect.Struct:
-
 			a := structMap[strings.TrimSpace(strings.Split(strDoubleDot[0], "[")[0])]
 
 			if err := signToStruct(rv, strings.TrimSpace(strDoubleDot[1]), a); err != nil {

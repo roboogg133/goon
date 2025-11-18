@@ -35,10 +35,6 @@ func recognizeType(s string) (reflect.Value, error) {
 			elems = append(elems, elem)
 		}
 
-		if len(elems) == 0 {
-			return reflect.MakeSlice(reflect.TypeOf([]any{}), 0, 0), nil
-		}
-
 		sliceType := reflect.SliceOf(typeToSet)
 
 		sliceValue := reflect.MakeSlice(sliceType, 0, len(elems))
@@ -61,6 +57,8 @@ func recognizeType(s string) (reflect.Value, error) {
 		f, err := strconv.ParseFloat(s, 64)
 		return reflect.ValueOf(f), err
 
+	case s == "":
+		return reflect.ValueOf(nil), nil
 	default:
 		s, _ = strings.CutPrefix(s, "\"")
 		s, _ = strings.CutSuffix(s, "\"")
