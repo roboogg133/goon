@@ -45,12 +45,12 @@ func Unmarshal(data []byte, v any) error {
 		text := scanner.Text()
 
 		strDoubleDot := strings.SplitN(text, ":", 2)
-		// if true is a list like users[n]: a, b, c, d
-	    if strings.ContainsAny(strings.TrimSpace(strDoubleDot[0]), "[]") && !strings.ContainsAny(strings.TrimSpace(strDoubleDot[0]), "{}") {
 
+		// if is true is a mixed list
+		if strings.ContainsAny(strings.TrimSpace(strDoubleDot[0]), "[]") && !strings.ContainsAny(strings.TrimSpace(strDoubleDot[0]), "{}") && strings.TrimSpace(strDoubleDot[1]) == "" {
 
 			//if true is a csv-style
-		} else if strings.ContainsAny(strings.TrimSpace(strDoubleDot[0]), "[]") {
+		} else if strings.ContainsAny(strings.TrimSpace(strDoubleDot[0]), "[]") && strings.ContainsAny(strings.TrimSpace(strDoubleDot[0]), "{}") {
 
 		}
 
@@ -62,9 +62,9 @@ func Unmarshal(data []byte, v any) error {
 		switch kind {
 		case reflect.Struct:
 
-			a := structMap[strings.TrimSpace(strDoubleDot[0])]
+			a := structMap[strings.TrimSpace(strings.Split(strDoubleDot[0], "[")[0])]
 
-			if err := signToStruct(rv, strings.TrimSpace(strDoubleDot[1]), a.Pos); err != nil {
+			if err := signToStruct(rv, strings.TrimSpace(strDoubleDot[1]), a); err != nil {
 				return err
 			}
 		case reflect.Map:
@@ -77,7 +77,7 @@ func Unmarshal(data []byte, v any) error {
 	return nil
 }
 
-func signToStruct(rv reflect.Value, rawValue string, pos int) error {
+func signToStruct(rv reflect.Value, rawValue string, a posStruct) error {
 
 	posVal, err := recognizeType(rawValue)
 	if err != nil {
@@ -90,7 +90,7 @@ func signToStruct(rv reflect.Value, rawValue string, pos int) error {
 		kind = rv.Kind()
 	}
 
-	field := rv.Field(pos)
+	field := rv.Field(a.Pos)
 	fieldKind := field.Kind()
 
 	if fieldKind == reflect.Ptr {
@@ -101,6 +101,7 @@ func signToStruct(rv reflect.Value, rawValue string, pos int) error {
 	if field.Kind() != posVal.Kind() && fieldKind != reflect.Interface {
 		return fmt.Errorf("goon: trying to assign %s to %s", posVal.Kind(), fieldKind)
 	}
+
 	field.Set(posVal)
 
 	return nil

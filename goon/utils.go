@@ -8,6 +8,46 @@ import (
 
 func recognizeType(s string) (reflect.Value, error) {
 	switch {
+	case strings.ContainsAny(s, ",") && !strings.HasPrefix(s, "\""):
+
+		split := strings.Split(s, ",")
+		var elems []reflect.Value
+
+		var typeToSet reflect.Type
+		reflectAny := reflect.TypeOf((*any)(nil)).Elem()
+		for _, v := range split {
+			v = strings.TrimSpace(v)
+			v, _ = strings.CutPrefix(v, "\"")
+			v, _ = strings.CutSuffix(v, "\"")
+			elem, err := recognizeType(v)
+			if err != nil {
+				return reflect.Value{}, err
+			}
+			if typeToSet != reflectAny {
+				if typeToSet != elem.Type() {
+
+					typeToSet = reflectAny
+				} else {
+
+					typeToSet = elem.Type()
+				}
+			}
+			elems = append(elems, elem)
+		}
+
+		if len(elems) == 0 {
+			return reflect.MakeSlice(reflect.TypeOf([]any{}), 0, 0), nil
+		}
+
+		sliceType := reflect.SliceOf(typeToSet)
+
+		sliceValue := reflect.MakeSlice(sliceType, 0, len(elems))
+
+		for _, e := range elems {
+			sliceValue = reflect.Append(sliceValue, e)
+		}
+
+		return sliceValue, nil
 	case s == "true":
 		return reflect.ValueOf(true), nil
 	case s == "false":
@@ -20,20 +60,6 @@ func recognizeType(s string) (reflect.Value, error) {
 	case strings.ContainsAny(s, "1234567890") && !strings.Contains(s, "\"") && strings.ContainsAny(s, "."):
 		f, err := strconv.ParseFloat(s, 64)
 		return reflect.ValueOf(f), err
-	case strings.ContainsAny(s, ",") && !strings.HasPrefix(s, "\""):
-		var values []reflect.Value
-
-		split := strings.Split(s, ",")
-
-		for _, v := range split {
-			str := strings.TrimSpace(v)
-			str, _ = strings.CutPrefix(s, "\"")
-			str, _ = strings.CutSuffix(s, "\"")
-
-			values = append(values, reflect.ValueOf(str))
-		}
-
-		return reflect.ValueOf(values), nil
 
 	default:
 		s, _ = strings.CutPrefix(s, "\"")

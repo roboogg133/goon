@@ -1,6 +1,7 @@
 package goon_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -13,6 +14,7 @@ type Object struct {
 	Active bool    `toon:"active"`
 	Email  string  `toon:"email"`
 	Score  float64 `toon:"score"`
+	Names  []any   `toon:"names"`
 }
 
 func TestUnmarshal(t *testing.T) {
@@ -24,6 +26,7 @@ func TestUnmarshal(t *testing.T) {
 		if err != nil {
 			t.Errorf("Unmarshal failed: %v", err)
 		}
+		fmt.Println(obj.Names)
 	})
 
 	meumapa := make(map[string]any)
