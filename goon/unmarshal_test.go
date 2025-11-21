@@ -17,6 +17,15 @@ type Object struct {
 	Names  []any   `toon:"names"`
 }
 
+type CsvToon struct {
+	Users []Person `toon:"users"`
+}
+type Person struct {
+	Name string `toon:"name"`
+	Age  int    `toon:"age"`
+	Size int    `toon:"size"`
+}
+
 func TestUnmarshal(t *testing.T) {
 
 	data, _ := os.ReadFile("./object.toon")
@@ -45,6 +54,43 @@ func TestUnmarshal(t *testing.T) {
 		if err != nil {
 			t.Errorf("Unmarshal failed: %v", err)
 		}
+	})
+
+	t.Run("slice of map", func(t *testing.T) {
+		data, _ := os.ReadFile("./tooncsv.toon")
+
+		sliceof := make(map[string]any)
+		err := goon.Unmarshal(data, &sliceof)
+		if err != nil {
+			t.Errorf("Unmarshal failed: %v", err)
+		}
+
+		for i, v := range sliceof {
+			fmt.Printf("%s :\n", i)
+			v := v.([]map[string]any)
+
+			for _, v2 := range v {
+				fmt.Println("{")
+				for j2, v3 := range v2 {
+					fmt.Printf("  %v : %v\n", j2, v3)
+				}
+				fmt.Println("}")
+			}
+
+		}
+	})
+
+	t.Run("slice of struct", func(t *testing.T) {
+		data, _ := os.ReadFile("./tooncsv.toon")
+
+		var test CsvToon
+		err := goon.Unmarshal(data, &test)
+		if err != nil {
+			t.Errorf("Unmarshal failed: %v", err)
+		}
+
+		fmt.Println(test)
+
 	})
 
 }

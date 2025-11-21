@@ -21,7 +21,7 @@ func Unmarshal(data []byte, v any) error {
 	rv := reflect.ValueOf(v)
 	kind := rv.Type().Kind()
 
-	if kind != reflect.Ptr || rv.IsNil() {
+	if kind != reflect.Pointer || rv.IsNil() {
 		return errors.New("goon: v must be a non-nil pointer")
 	}
 
@@ -43,18 +43,120 @@ func Unmarshal(data []byte, v any) error {
 	reader := bytes.NewReader(data)
 	scanner := bufio.NewScanner(reader)
 
-	r, err := regexp.Compile(`^(.*?)\[\s*([1-9]\d*)\s*\]`)
-	if err != nil {
-		return err
-	}
+	r, _ := regexp.Compile(`^(.*?)\[\s*([1-9]\d*)\s*\]`)
+	csvl, _ := regexp.Compile(`^(.*?)\[\s*([1-9]\d*)([|\t]?)\s*\]\{([^}]+)\}`)
 
 	for scanner.Scan() {
 		text := scanner.Text()
 
 		strDoubleDot := strings.SplitN(text, ":", 2)
 
-		// if is true is a mixed list
-		if r.MatchString(strings.TrimSpace(strDoubleDot[0])) && strings.TrimSpace(strDoubleDot[1]) == "" {
+		// if is true is a csv like list
+		if csvl.MatchString(strings.TrimSpace(strDoubleDot[0])) && strings.TrimSpace(strDoubleDot[1]) == "" {
+			matches := csvl.FindStringSubmatch(strings.TrimSpace(strDoubleDot[0]))
+			if matches[3] == "" {
+				matches[3] = ","
+			}
+			length, err := strconv.Atoi(matches[2])
+			if err != nil {
+				return err
+			}
+			sliceObject, err := csvLike(scanner, length, strings.Split(matches[4], matches[3]), matches[3])
+			if err != nil {
+				return err
+			}
+
+			switch kind {
+			case reflect.Struct:
+				a, exists := structMap[matches[1]]
+				if !exists {
+					continue
+				}
+				field := rv.Field(a.Pos)
+
+				if field.Kind() != reflect.Slice {
+					return fmt.Errorf("invalid type can only unmarshal a csv like object on slices")
+				}
+
+				sliceType := field.Type().Elem()
+				switch sliceType.Kind() {
+				case reflect.Struct:
+
+					elemType := field.Type().Elem()
+
+					innerMap := make(map[string]posStruct)
+
+					for i := 0; i < elemType.NumField(); i++ {
+						var a posStruct
+						a.Name = elemType.Field(i).Tag.Get("toon")
+
+						if a.Name == "" {
+							continue
+						}
+						a.Pos = i
+						innerMap[a.Name] = a
+					}
+
+					newSlice := reflect.MakeSlice(field.Type(), 0, len(sliceObject))
+
+					for _, structs := range sliceObject {
+						newElement := reflect.New(elemType).Elem()
+						for j, v := range structs {
+							b, exists := innerMap[j]
+							if !exists {
+								continue
+							}
+							if !v.IsValid() {
+								continue
+							}
+							newElement.Field(b.Pos).Set(v)
+						}
+						newSlice = reflect.Append(newSlice, newElement)
+					}
+
+					field.Set(newSlice)
+				case reflect.Map:
+					var result []map[string]any
+
+					new := reflect.MakeSlice(reflect.TypeOf(result), len(sliceObject), len(sliceObject))
+
+					for i, v := range sliceObject {
+						temp := make(map[string]any)
+						for i, v2 := range v {
+							if !v2.IsValid() {
+								continue
+							}
+							temp[i] = v2.Interface()
+						}
+						result = append(result, temp)
+						new.Index(i).Set(reflect.ValueOf(temp))
+					}
+
+					field.Set(new)
+				}
+				continue
+			case reflect.Map:
+
+				var result []map[string]any
+
+				new := reflect.MakeSlice(reflect.TypeOf(result), len(sliceObject), len(sliceObject))
+
+				for i, v := range sliceObject {
+					temp := make(map[string]any)
+					for i, v2 := range v {
+						if !v2.IsValid() {
+							continue
+						}
+						temp[i] = v2.Interface()
+					}
+					result = append(result, temp)
+					new.Index(i).Set(reflect.ValueOf(temp))
+				}
+
+				rv.SetMapIndex(reflect.ValueOf(matches[1]), new)
+			}
+			continue
+		} else if r.MatchString(strings.TrimSpace(strDoubleDot[0])) && strings.TrimSpace(strDoubleDot[1]) == "" {
 			matches := r.FindStringSubmatch(strings.TrimSpace(strDoubleDot[0]))
 
 			listLenght, err := strconv.Atoi(matches[2])
@@ -73,7 +175,7 @@ func Unmarshal(data []byte, v any) error {
 
 				kind := rv.Kind()
 
-				if kind == reflect.Ptr {
+				if kind == reflect.Pointer {
 					rv = rv.Elem()
 					kind = rv.Kind()
 				}
@@ -81,7 +183,7 @@ func Unmarshal(data []byte, v any) error {
 				field := rv.Field(a.Pos)
 				fieldKind := field.Kind()
 
-				if fieldKind == reflect.Ptr {
+				if fieldKind == reflect.Pointer {
 					field = field.Elem()
 					fieldKind = field.Kind()
 				}
@@ -94,10 +196,7 @@ func Unmarshal(data []byte, v any) error {
 			case reflect.Map:
 				rv.SetMapIndex(reflect.ValueOf(strings.TrimSpace(strings.Split(strDoubleDot[0], "[")[0])), slice)
 			}
-
-			//if true is a csv-style
-		} else if strings.ContainsAny(strings.TrimSpace(strDoubleDot[0]), "[]") && strings.ContainsAny(strings.TrimSpace(strDoubleDot[0]), "{}") {
-
+			continue
 		}
 
 		posVal, err := recognizeType(strings.TrimSpace(strDoubleDot[1]))
@@ -134,7 +233,7 @@ func signToStruct(rv reflect.Value, rawValue string, a posStruct) error {
 	}
 	kind := rv.Kind()
 
-	if kind == reflect.Ptr {
+	if kind == reflect.Pointer {
 		rv = rv.Elem()
 		kind = rv.Kind()
 	}
@@ -142,7 +241,7 @@ func signToStruct(rv reflect.Value, rawValue string, a posStruct) error {
 	field := rv.Field(a.Pos)
 	fieldKind := field.Kind()
 
-	if fieldKind == reflect.Ptr {
+	if fieldKind == reflect.Pointer {
 		field = field.Elem()
 		fieldKind = field.Kind()
 	}
@@ -190,15 +289,14 @@ func multipleLineList(scanner *bufio.Scanner, listLength int) (reflect.Value, er
 	return sliceValue, nil
 }
 
-func csvLike(scanner *bufio.Scanner, listLength int, orderList []string) ([]map[string]reflect.Value, error) {
+func csvLike(scanner *bufio.Scanner, listLength int, orderList []string, sep string) ([]map[string]reflect.Value, error) {
 
 	var maplists []map[string]reflect.Value
-
 	for _ = range listLength {
 		scanner.Scan()
 		text := strings.TrimSpace(scanner.Text())
 
-		splited := strings.Split(text, ",")
+		splited := strings.Split(text, sep)
 
 		maps := make(map[string]reflect.Value)
 		for j, v := range splited {
