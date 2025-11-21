@@ -119,7 +119,7 @@ func normalize(v reflect.Value) ([]entry, error) {
 // and returns the marshaled bytes or an error. Nil pointer fields are emitted as `null` unless
 // the field has an `omitempty` tag, in which case they are omitted. String values are quoted
 // when they contain special characters, are empty, equal `"true"`, `"false"`, or `"null"`,
-/// or begin/end with a space. Nested structs and maps are emitted as indented blocks (two-space
+// or begin/end with a space. Nested structs and maps are emitted as indented blocks (two-space
 // indentation per nesting level). Array and slice fields are formatted using the array marshal
 // conventions (including a `Name[length]` header). An error is returned for unsupported kinds
 // or when normalization fails.

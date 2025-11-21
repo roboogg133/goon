@@ -37,4 +37,14 @@ func TestUnmarshal(t *testing.T) {
 			t.Errorf("Unmarshal failed: %v", err)
 		}
 	})
+
+	t.Run("UnmarshalMixedList_Map", func(t *testing.T) {
+		data, _ := os.ReadFile("./mixedList.toon")
+		meumapa := make(map[string]any)
+		err := goon.Unmarshal(data, &meumapa)
+		if err != nil {
+			t.Errorf("Unmarshal failed: %v", err)
+		}
+	})
+
 }
