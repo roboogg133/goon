@@ -16,6 +16,8 @@ type posStruct struct {
 	Pos  int
 }
 
+const IndentationRune = ' '
+
 func Unmarshal(data []byte, v any) error {
 
 	rv := reflect.ValueOf(v)
@@ -46,10 +48,23 @@ func Unmarshal(data []byte, v any) error {
 	r, _ := regexp.Compile(`^(.*?)\[\s*([1-9]\d*)\s*\]`)
 	csvl, _ := regexp.Compile(`^(.*?)\[\s*([1-9]\d*)([|\t]?)\s*\]\{([^}]+)\}`)
 
+	var lastIdentationN int
+	var saveName string
+	var builder4Nested strings.Builder
 	for scanner.Scan() {
 		text := scanner.Text()
 
 		strDoubleDot := strings.SplitN(text, ":", 2)
+		if strings.TrimSpace(strDoubleDot[1]) == "" {
+			saveName = strings.TrimSpace(strDoubleDot[0])
+		}
+		s := strings.Replace(strDoubleDot[0], strings.TrimSpace(strDoubleDot[0]), "", 1)
+		indentationN := strings.Count(s, string(IndentationRune))
+		if indentationN > lastIdentationN {
+			lastIdentationN = indentationN
+			builder4Nested.WriteString(text)
+			continue
+		}
 
 		// if is true is a csv like list
 		if csvl.MatchString(strings.TrimSpace(strDoubleDot[0])) && strings.TrimSpace(strDoubleDot[1]) == "" {
@@ -207,15 +222,40 @@ func Unmarshal(data []byte, v any) error {
 		if !posVal.IsValid() {
 			continue
 		}
-
 		switch kind {
 		case reflect.Struct:
 			a := structMap[strings.TrimSpace(strings.Split(strDoubleDot[0], "[")[0])]
 
+			if indentationN < lastIdentationN {
+				if kind == reflect.Pointer {
+					rv = rv.Elem()
+					kind = rv.Kind()
+				}
+				if err := Unmarshal([]byte(builder4Nested.String()), &rv); err != nil {
+					return err
+				}
+				continue
+			}
+
 			if err := signToStruct(rv, strings.TrimSpace(strDoubleDot[1]), a); err != nil {
 				return err
 			}
+
 		case reflect.Map:
+			fmt.Printf("now : %d before: %d\n", indentationN, lastIdentationN)
+			if indentationN < lastIdentationN {
+				if kind == reflect.Pointer {
+					rv = rv.Elem()
+					kind = rv.Kind()
+				}
+				fmt.Println("giving dest: ", saveName)
+				dest := rv.MapIndex(reflect.ValueOf(saveName))
+				if err := Unmarshal([]byte(builder4Nested.String()), &dest); err != nil {
+					return err
+				}
+				continue
+			}
+
 			rv.SetMapIndex(reflect.ValueOf(strings.TrimSpace(strDoubleDot[0])), posVal)
 		}
 		continue
@@ -261,8 +301,7 @@ func multipleLineList(scanner *bufio.Scanner, listLength int) (reflect.Value, er
 
 	for i := 0; i < listLength; i++ {
 		scanner.Scan()
-		text := scanner.Text()
-		trimmedLine := strings.TrimSpace(text)
+		trimmedLine := strings.TrimSpace(scanner.Text())
 
 		if !strings.HasPrefix(trimmedLine, "-") {
 			i--

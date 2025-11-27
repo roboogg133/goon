@@ -93,4 +93,17 @@ func TestUnmarshal(t *testing.T) {
 
 	})
 
+	t.Run("nested struct", func(t *testing.T) {
+		data, _ := os.ReadFile("./nested-object.toon")
+
+		test := make(map[string]any)
+		err := goon.Unmarshal(data, &test)
+		if err != nil {
+			t.Errorf("Unmarshal failed: %v", err)
+		}
+
+		fmt.Println(test)
+
+	})
+
 }
