@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+const Indentation = "  "
+
 func Marshal(v any) ([]byte, error) {
 
 	rv := reflect.ValueOf(v)
@@ -183,7 +185,7 @@ func marshalStruct(v reflect.Value) ([]byte, error) {
 			var builder strings.Builder
 			scanner := bufio.NewScanner(strings.NewReader(str))
 			for scanner.Scan() {
-				builder.WriteString("  ")
+				builder.WriteString(Indentation)
 				builder.WriteString(scanner.Text())
 				builder.WriteByte('\n')
 			}
@@ -357,28 +359,28 @@ func arrayMixMarshal(value reflect.Value) (string, error) {
 				builder.WriteByte('\n')
 			}
 
-			builder.WriteString("  - " + s + "\n")
+			builder.WriteString(Indentation + "- " + s + "\n")
 
 		case reflect.Int:
 			if i == 0 {
 				builder.WriteRune(':')
 				builder.WriteByte('\n')
 			}
-			builder.WriteString("  - " + fmt.Sprint(elem.Int()) + "\n")
+			builder.WriteString(Indentation + "- " + fmt.Sprint(elem.Int()) + "\n")
 
 		case reflect.Float32, reflect.Float64:
 			if i == 0 {
 				builder.WriteRune(':')
 				builder.WriteByte('\n')
 			}
-			builder.WriteString("  - " + fmt.Sprint(elem.Float()) + "\n")
+			builder.WriteString(Indentation + "- " + fmt.Sprint(elem.Float()) + "\n")
 
 		case reflect.Bool:
 			if i == 0 {
 				builder.WriteRune(':')
 				builder.WriteByte('\n')
 			}
-			builder.WriteString("  - " + fmt.Sprint(elem.Bool()) + "\n")
+			builder.WriteString(Indentation + "- " + fmt.Sprint(elem.Bool()) + "\n")
 
 		case reflect.Struct, reflect.Map:
 			if i == 0 {
@@ -411,7 +413,7 @@ func arrayMixMarshal(value reflect.Value) (string, error) {
 			}
 			if value.Index(i).Type().Kind() != reflect.Interface {
 				total := len(entrys) - 1
-				builder.WriteString("  ")
+				builder.WriteString(Indentation)
 				for i, e := range entrys {
 
 					s, err := marshalSolve(e.Value, e.Value.Type())
@@ -439,7 +441,7 @@ func arrayMixMarshal(value reflect.Value) (string, error) {
 					if lock {
 						lock = false
 					} else {
-						indented.WriteString("    ")
+						indented.WriteString(Indentation + "  ")
 					}
 					indented.WriteString(scanner.Text())
 					indented.WriteByte('\n')
@@ -527,7 +529,7 @@ func doTheCSVThingORNothing(rv reflect.Value) (string, error) {
 
 	for _, entrys := range allEntrys {
 		total = len(entrys) - 1
-		builder.WriteString("  ")
+		builder.WriteString(Indentation)
 		j := 0
 		total := len(allnames) - 1
 		for _, name := range allnames {
