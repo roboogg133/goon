@@ -35,7 +35,16 @@ func TestUnmarshal(t *testing.T) {
 		if err != nil {
 			t.Errorf("Unmarshal failed: %v", err)
 		}
-		fmt.Println(obj.Names)
+		returned := fmt.Sprintf("id : %d\nname : %s\nactive: %t\nemail : %s\nscore: %f\nnames: %v\n", obj.Id, obj.Name, obj.Active, obj.Email, obj.Score, obj.Names)
+		if returned != `id : 123
+name : Ada Lovelace
+active: true
+email : ada@example.com
+score: 98.500000
+names: [hello testing here]
+` {
+			t.Fail()
+		}
 	})
 
 	meumapa := make(map[string]any)
@@ -45,6 +54,7 @@ func TestUnmarshal(t *testing.T) {
 		if err != nil {
 			t.Errorf("Unmarshal failed: %v", err)
 		}
+		fmt.Println(meumapa)
 	})
 
 	t.Run("UnmarshalMixedList_Map", func(t *testing.T) {
